@@ -62,6 +62,7 @@ main{max-width:560px;margin:0 auto;padding:14px 16px 110px}
 .day .d{font-weight:600}
 .day .r{text-align:right;font-weight:600}
 .day .s{color:var(--muted);font-size:15px}
+.wisdag{border:1px solid var(--line);background:#fff;color:var(--bad);border-radius:8px;padding:4px 10px;font-size:14px;cursor:pointer}
 .bars{display:flex;align-items:flex-end;gap:3px;height:70px;margin-top:8px}
 .bars div{flex:1;background:var(--acc);border-radius:3px 3px 0 0;min-height:2px}
 .bars div.rest{background:var(--line)}
@@ -355,6 +356,7 @@ function rPlan(){
   </div>
   <div class="card" id="pRes"></div>
   <button class="btn" id="pSave">Plan bewaren</button>
+  ${ex?`<button class="btn alt" id="pWis">Plan voor ${longDate(k)} wissen</button>`:""}
   <div class="card" style="margin-top:14px"><h2>Zonsondergang</h2><p class="sub"><span id="pLocTxt">${esc(locTxt)}</span>. Gps werkt ook zonder internet. Bewaar je locatie de avond ervoor in je slaapplaats.</p>
     <button class="btn alt" id="pLoc">📍 Locatie bewaren</button></div>
   <p class="note">${S.set.leren&&g.factor?`Plannen met jouw geleerde tempo (factor ${dec(g.factor,2)}, uit ${g.n} dagen).`:`Plannen met de vuistregel. Na 3 gelopen dagen plant de app met jouw eigen tempo.`}</p>`;
@@ -366,6 +368,7 @@ function rPlan(){
     S.days[k]=S.days[k]||{}; delete S.days[k].rust; S.days[k].plan=pl; save(); toast("Plan bewaard voor "+longDate(k)+".");
     if(k===today()) setView("vandaag"); else render();
   };
+  if($("pWis")) $("pWis").onclick=()=>{ if(!confirm("Het plan voor "+longDate(k)+" wissen?")) return; delete S.days[k]; save(); toast("Plan gewist."); render(); };
   $("pLoc").onclick=()=>haalLocatie(ok=>{ if(ok&&$("pLocTxt")) $("pLocTxt").textContent=locTekst(); planPreview(); });
   planPreview();
 }
@@ -426,13 +429,15 @@ function rLogboek(){
   if(!lijst.length) h+=`<p class="sub">Nog niets. Begin bij Plan.</p>`;
   lijst.forEach(k=>{
     const d=S.days[k];
-    if(d.rust){ h+=`<div class="day"><span class="d">${shortDate(k)}</span><span class="r">rust</span></div>`; return; }
+    const wis=`<span class="s"><button class="wisdag" data-k="${k}">Wissen</button></span>`;
+    if(d.rust){ h+=`<div class="day"><span class="d">${shortDate(k)}</span><span class="r">rust</span><span></span>${wis}</div>`; return; }
     const loop=echteLooptijd(d);
     h+=`<div class="day"><span class="d">${shortDate(k)} · ${dec(d.plan.km,1)} km</span><span class="r">${loop!=null?diff(loop-d.plan.loop):(d.real&&d.real.start?"onderweg":"gepland")}</span>
-      <span class="s">↑ ${d.plan.up} ↓ ${d.plan.down} · plan ${dur(d.plan.loop)}${loop!=null?" · echt "+dur(loop):""}</span><span></span></div>`;
+      <span class="s">↑ ${d.plan.up} ↓ ${d.plan.down} · plan ${dur(d.plan.loop)}${loop!=null?" · echt "+dur(loop):""}</span>${wis}</div>`;
   });
   h+=`</div>`;
   $("out").innerHTML=h;
+  document.querySelectorAll(".wisdag").forEach(bt=>bt.onclick=()=>{ const k=bt.dataset.k; if(!confirm(longDate(k)+" wissen?")) return; delete S.days[k]; save(); toast("Gewist."); render(); });
 }
 
 /* ---------- Oefenen ---------- */
